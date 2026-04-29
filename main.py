@@ -25,7 +25,6 @@ sns.set_context("paper", font_scale=1.2)
 RUN_MODE = "FULL"
 SAMPLES_PER_DATASET = 1000
 
-# !!! הוספת ה-72B (בגרסת AWQ כדי שירוץ על H100) ושינוי סדר כפי שביקשת !!!
 MODELS_TO_TEST = [
     "Qwen/Qwen2.5-1.5B-Instruct",
     "Qwen/Qwen2.5-7B-Instruct",
@@ -181,7 +180,6 @@ def get_robust_logprob(context, question, answer, model_id, model=None, tokenize
         for i in range(len(target_ids)):
             ans_logprobs.append(lps[0, prompt_len + i - 1, target_ids[i]].item())
             
-        # תיקון קריטי: נרמול טוקנים (ממוצע)
         return sum(ans_logprobs) / len(ans_logprobs) if len(ans_logprobs) > 0 else -15.0
 # ==========================================
 def update_master_dashboard(df_results, mode):
@@ -229,7 +227,6 @@ def run_resume_research():
     data = load_all_data(SAMPLES_PER_DATASET)
     checkpoint_file = f"{BASE_DIR}/golden_results_checkpoint.csv"
 
-    # מנגנון מחיקה - מוודא שאנחנו מתחילים מאפס כמו שביקשת
     if FORCE_FRESH_START and os.path.exists(checkpoint_file):
         os.remove(checkpoint_file)
         print("🗑️ FORCE_FRESH_START is True: Deleted old checkpoint. Starting entirely from scratch.")
@@ -292,7 +289,6 @@ def run_resume_research():
             entropy = -lps["zero"] if lps["zero"] < 0 else 1e-5
             prob_z = np.exp(lps["zero"])
             
-            # חישוב NCU כולל שמירה של הנתון הגולמי (raw_ncu) בשביל המאמר
             raw_ncu = cus / entropy
             bounded_ncu = max(0, min(1, raw_ncu))
 
@@ -318,9 +314,8 @@ def run_resume_research():
     update_master_dashboard(final_df, RUN_MODE)
 
     print("\n" + "="*70)
-    print("📊 CURRENT SUMMARY TABLE")
+    print(" CURRENT SUMMARY TABLE")
     available_models = [m for m in MODEL_ORDER if m in final_df['model'].unique()]
-    # הוספת ה-raw_ncu לטבלת הסיכום
     summary_table = final_df.groupby('model')[['acc_zero', 'acc_oracle', 'acc_noise', 'acc_conflict', 'ncu', 'raw_ncu', 'latency']].mean().round(3).reindex(available_models)
     display(summary_table)
 
